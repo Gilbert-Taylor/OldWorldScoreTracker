@@ -719,15 +719,20 @@
                 document.getElementById('final-p2-score').textContent = p2FinalScore;
                 
                 const deathLogContainer = document.getElementById('death-log');
-                deathLogContainer.innerHTML = `
-                     <div class="log-column">
-                         <h3>${gameState.player1.name}'s Losses</h3>
-                         <ul>${gameState.player1.deathLog.map(d => `<li><b>Turn ${d.turn}:</b> ${d.name}</li>`).join('') || '<li>None</li>'}</ul>
-                    </div>
-                    <div class="log-column">
-                         <h3>${gameState.player2.name}'s Losses</h3>
-                         <ul>${gameState.player2.deathLog.map(d => `<li><b>Turn ${d.turn}:</b> ${d.name}</li>`).join('') || '<li>None</li>'}</ul>
-                    </div>`;
+                // Combine losses into single lines per turn (no repeated turn numbers)
+                const turnLosses = [];
+                for (let t = 1; t <= gameState.turn; t++) {
+                    const p1Names = gameState.player1.deathLog.filter(d => d.turn === t).map(d => d.name);
+                    const p2Names = gameState.player2.deathLog.filter(d => d.turn === t).map(d => d.name);
+                    if (p1Names.length === 0 && p2Names.length === 0) continue;
+
+                    let line = `<li><b>Turn ${t}:</b>`;
+                    if (p1Names.length) line += `<br>${gameState.player1.name}: ${p1Names.join(', ')}`;
+                    if (p2Names.length) line += `<br>${gameState.player2.name}: ${p2Names.join(', ')}`;
+                    line += `</li>`;
+                    turnLosses.push(line);
+                }
+                deathLogContainer.innerHTML = turnLosses.length ? `<ul>${turnLosses.join('')}</ul>` : '<li>None</li>';
 
                 const objectiveLog = document.getElementById('objective-log');
                 // Sum strategic locations per player per turn (combine both end-of-turn rows)
