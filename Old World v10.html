@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Old World Score Tracker v9</title>
+    <style>
+        @font-face {
+            font-family: 'Caslon Antique';
+            src: url('./CaslonAntique-Regular.ttf') format('truetype');
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Caslon Antique';
+            src: url('./CaslonAntique-Bold.ttf') format('truetype');
+            font-weight: 700;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Caslon Antique';
+            src: url('./CaslonAntique-Italic.ttf') format('truetype');
+            font-weight: 400;
+            font-style: italic;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Caslon Antique';
+            src: url('./CaslonAntique-BoldItalic.ttf') format('truetype');
+            font-weight: 700;
+            font-style: italic;
+            font-display: swap;
+        }
+
+        :root {
+            --bg-color: #f3f0e9; /* Parchment */
+            --text-color: #4a3f35; /* Dark Brown */
+            --border-color: #dcd3c4; /* Lighter Parchment */
+            --accent-color: #8c1c13; /* Deep Red */
+            --destroyed-color: #777;
+            --damaged-color: #b48a5e;
+            --button-secondary-bg: #6c584c;
+            --button-secondary-border: #4a3f35;
+        }
+
+        body {
+            font-family: 'Caslon Antique', serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 1rem;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1, h2, h3, h4 {
+            text-align: center;
+            color: var(--accent-color);
+            font-weight: bold;
+            margin-bottom: 0.5em;
+        }
+        
+        h1 { font-size: 2.5rem; letter-spacing: 1px; margin-top: 0; }
+        h2 { font-size: 1.8rem; }
+        h3 { font-size: 1.5rem; }
+        h4 { font-size: 1.1rem; text-align: left; color: var(--text-color); margin: 0.75rem 0 0.5rem 0;}
+
+        button {
+            display: block;
+            width: 100%;
+            padding: 1rem;
+            font-size: 1.2rem;
+            font-family: 'Caslon Antique', serif;
+            font-weight: bold;
+            color: white;
+            background-color: var(--accent-color);
+            border: 1px solid #6b150d;
+            box-shadow: none; /* removed drop shadow */
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 1rem;
+            transition: all 0.2s;
+        }
+        
+        button.secondary {
+             background-color: var(--button-secondary-bg);
+             border-color: var(--button-secondary-border);
+        }
+
+        button:hover, button:active {
+            filter: brightness(1.1);
+            transform: translateY(-2px);
+            box-shadow: none; /* removed hover shadow */
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .grid-2-col {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (min-width: 768px) {
+            .grid-2-col {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        .card {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            background-color: #fffaf0;
+            box-shadow: none; /* removed drop shadow */
+        }
+
+        textarea {
+            width: 100%;
+            height: 350px;
+            box-sizing: border-box;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            font-size: 0.9em;
+            padding: 0.5rem;
+            font-family: monospace;
+            background-color: #fff;
+        }
+
+        input[type="text"] {
+            width: calc(100% - 1rem);
+            padding: 0.5rem;
+            font-size: 1.1rem;
+            font-family: 'Caslon Antique', serif;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+            font-size: 1.1rem;
+        }
+        
+        input[type="checkbox"] {
+             margin-right: 0.8rem;
+             width: 20px;
+             height: 20px;
+             accent-color: var(--accent-color);
+             flex-shrink: 0;
+        }
+
+        /* --- Turn Order Screen --- */
+        #turn-order-screen .card { padding: 2rem; }
+        .roll-off-player { margin-bottom: 1rem; }
+        .roll-off-player h3 { margin: 0 0 1rem 0; text-align: left; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; }
+        .roll-off-options { display: flex; gap: 2rem; }
+
+        /* --- Game Screen --- */
+        /* Turn controls box (only contains the turn changer) */
+        .bottom-nav {
+            position: sticky;
+            bottom: 0;
+            z-index: 200;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            margin: 0; /* remove extra margins so it hugs the bottom */
+            padding: 0.6rem;
+            border-top: 1px solid var(--border-color);
+            background: linear-gradient(to top, rgba(243,240,233,0.98), rgba(243,240,233,0.9));
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .bottom-nav button {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            font-size: 1rem;
+            margin-top: 0;
+        }
+        .turn-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Bottom action strip: New Game (left) and Finish Game (right) */
+        .bottom-actions {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 0.6rem;
+            margin-top: 1rem;
+            border-top: 1px solid var(--border-color);
+            background: transparent;
+        }
+        .bottom-actions button {
+             flex: 1 1 auto;
+             max-width: 420px;
+             min-width: 120px;
+             margin: 0;
+             padding: 0.6rem 1rem;
+        }
+        
+        .scoreboard {
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            background: white;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .scores-header {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            margin-bottom: 1.5rem;
+            grid-column: 1 / -1;
+            background-color: var(--bg-color); /* parchment background so sticky header blends in */
+            position: sticky; /* stick to top when scrolling */
+            top: 0;
+            z-index: 999;
+            padding: 0.6rem 0;
+            box-shadow: none;
+            border-bottom: 1px solid var(--border-color); /* subtle divider instead of heavy stroke */
+        }
+
+        .total-vp-container { 
+            text-align: center; 
+            padding: 0.5rem 1.25rem;
+            border: none; /* removed big stroke around score boxes */
+            border-radius: 8px;
+            width: 45%;
+            box-shadow: none; /* ensure no shadow */
+            background-color: transparent; /* let header/bg show through */
+        }
+
+        .total-vp { 
+            font-size: 4rem; /* Bigger score numbers */
+            font-weight: bold; 
+            margin: 0.1em 0; 
+            color: var(--accent-color);
+        }
+        .scoreboard-name-header { 
+            font-size: 1.8rem; /* Bigger name */
+            font-weight: bold; 
+            margin: 0; 
+            color: var(--text-color);
+        }
+
+        .objectives-section {
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .tracker-control {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .tracker-control button {
+            width: 35px;
+            height: 35px;
+            font-size: 1.2rem;
+            padding: 0;
+            margin: 0;
+            line-height: 1;
+            background-color: var(--button-secondary-bg);
+            border-color: var(--button-secondary-border);
+        }
+        .tracker-control span.value {
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        
+        .strategic-locations h4 {
+            margin: 0.75rem 0 0.5rem 0;
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+        .checkbox-grid {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: flex-start;
+        }
+
+        .unit-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            flex-grow: 1;
+        }
+
+        .unit-list li {
+            padding: 0.75rem; margin-bottom: 0.5rem; border: 1px solid var(--border-color);
+            border-radius: 4px; cursor: pointer; transition: background-color 0.2s;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        
+        .unit-list li.status-alive { background-color: #fff; }
+        .unit-list li.status-damaged { background-color: #fff3e0; border-color: var(--damaged-color); color: var(--damaged-color); }
+        .unit-list li.status-destroyed { background-color: #f1f1f1; text-decoration: line-through; color: var(--destroyed-color); border-color: #ddd; }
+        .unit-status-indicator { font-size: 0.8em; font-weight: bold; padding: 2px 6px; border-radius: 4px; margin-left: 1rem; color: white; white-space: nowrap; }
+        .status-indicator-damaged { background-color: var(--damaged-color); }
+        .status-indicator-destroyed { background-color: var(--destroyed-color); }
+        
+        .modal {
+            display: none; position: fixed; z-index: 1000; left: 0; top: 0;
+            width: 100%; height: 100%; background-color: rgba(0,0,0,0.6);
+            justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background-color: #fffaf0; padding: 2rem; border-radius: 8px;
+            border: 2px solid var(--text-color); text-align: center; max-width: 90%;
+            width: 300px; box-shadow: none; /* removed drop shadow */
+        }
+        .modal-content h3 { margin-top: 0; }
+        .modal-content button { margin-top: 0.5rem; }
+
+        /* --- Post Game Screen --- */
+        #post-game-screen .final-scores { display: flex; justify-content: space-around; text-align: center; margin: 2rem 0; }
+        .log-column { padding: 1rem; }
+        .log-column h3 { color: var(--text-color); }
+        .log-column ul { list-style-type: none; padding: 0; }
+        .log-column li { margin-bottom: 0.5rem; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div id="setup-screen">
+            <h1>The Old World Score Tracker</h1>
+            <p style="text-align: center;">Enter player names and paste army lists below.</p>
+            <div class="grid-2-col">
+                <div class="card">
+                    <h2>Player 1</h2>
+                    <input type="text" id="setup-p1-name" placeholder="Player 1 Name" value="Player 1">
+                    <textarea id="player1-list-input" placeholder="Paste your list here..."></textarea>
+                </div>
+                <div class="card">
+                    <h2>Player 2</h2>
+                    <input type="text" id="setup-p2-name" placeholder="Player 2 Name" value="Player 2">
+                    <textarea id="player2-list-input" placeholder="Paste your opponent's list here..."></textarea>
+                </div>
+            </div>
+            <button id="process-lists-btn">Set up Game</button>
+        </div>
+        
+        <div id="turn-order-screen" class="hidden">
+            <h1>First Turn Roll-off</h1>
+            <div class="card">
+                <div class="roll-off-player">
+                    <h3 id="rolloff-p1-name">Player 1</h3>
+                    <div class="roll-off-options">
+                        <label><input type="checkbox" id="p1-won-roll"> Won Roll-off</label>
+                        <label><input type="checkbox" id="p1-goes-first"> Goes First</label>
+                    </div>
+                </div>
+                <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 1.5rem 0;">
+                <div class="roll-off-player">
+                    <h3 id="rolloff-p2-name">Player 2</h3>
+                    <div class="roll-off-options">
+                        <label><input type="checkbox" id="p2-won-roll"> Won Roll-off</label>
+                        <label><input type="checkbox" id="p2-goes-first"> Goes First</label>
+                    </div>
+                </div>
+            </div>
+            <button id="start-game-btn">Start Game</button>
+        </div>
+
+
+        <div id="game-screen" class="hidden">
+            <div class="scores-header" id="scores-header">
+                </div>
+
+            <div class="game-grid grid-2-col">
+                <div class="scoreboard" id="player1-scoreboard"></div>
+                <div class="scoreboard" id="player2-scoreboard"></div>
+            </div>
+            
+             <div class="bottom-nav" aria-hidden="false" role="toolbar" aria-label="Turn controls">
+                <div class="turn-controls">
+                    <button id="prev-turn-btn" aria-label="Previous turn">&lt;</button>
+                    <span id="turn-display" aria-live="polite">Turn 1</span>
+                    <button id="next-turn-btn" aria-label="Next turn">&gt;</button>
+                </div>
+            </div>
+
+            <!-- Bottom actions (outside the turn box). Buttons sit side-by-side and stick to bottom -->
+            <div class="bottom-actions" role="contentinfo">
+                <button id="new-game-btn" class="secondary">New Game</button>
+                <button id="finish-game-btn">Finish Game</button>
+            </div>
+        </div>
+
+        <div id="post-game-screen" class="hidden">
+             <h1>Game Over</h1>
+             <div class="card">
+                 <!-- Return to game button (placed above Start New Game) -->
+                 <div style="display:flex; justify-content:center; gap:0.75rem; align-items:center; margin-bottom:1rem;">
+                     <button id="post-return-to-game-btn">Return to Game</button>
+                 </div>
+
+                 <div class="final-scores">
+                     <div>
+                         <h2 id="final-p1-name">Player 1</h2>
+                         <h1 id="final-p1-score" class="total-vp">0</h1>
+                     </div>
+                     <div>
+                         <h2 id="final-p2-name">Player 2</h2>
+                         <h1 id="final-p2-score" class="total-vp">0</h1>
+                     </div>
+                 </div>
+                 <h2 style="color: var(--text-color);">Game Log</h2>
+                 <div class="grid-2-col">
+                     <div class="log-column">
+                         <ul id="objective-log"></ul>
+                     </div>
+                      <div class="log-column">
+                         <ul id="death-log"></ul>
+                     </div>
+                 </div>
+             </div>
+             <button id="post-game-new-btn" class="secondary">Start a New Game</button>
+        </div>
+    </div>
+    
+    <div id="status-modal" class="modal">
+        <div class="modal-content">
+            <h3 id="modal-unit-name">Unit Name</h3>
+            <button class="status-btn" data-status="alive">Alive</button>
+            <button class="status-btn" data-status="damaged">Damaged (&lt;25% or Fleeing)</button>
+            <button class="status-btn" data-status="destroyed">Destroyed</button>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            let gameState = {};
+
+            const screens = {
+                setup: document.getElementById('setup-screen'),
+                turnOrder: document.getElementById('turn-order-screen'),
+                game: document.getElementById('game-screen'),
+                postGame: document.getElementById('post-game-screen')
+            };
+            
+            const ignoredKeywords = ["++", "•", "Warhammer:", "Created with", "Combined Arms", "Grand Melee", "Open War", "Renegade"];
+
+            function initGameState() {
+                gameState = {
+                    turn: 1,
+                    player1: { name: 'Player 1', army: [], trophies: 0, objectives: {}, koth: false, kingKill: false, bsbKill: false, deathLog: [] },
+                    player2: { name: 'Player 2', army: [], trophies: 0, objectives: {}, koth: false, kingKill: false, bsbKill: false, deathLog: [] },
+                    turnOrder: [],
+                    activeModal: { playerKey: null, unitIndex: null }
+                };
+                for(let i=1; i<=6; i++) {
+                    gameState.player1.objectives[i] = [0,0]; // [player1's turn, player2's turn]
+                    gameState.player2.objectives[i] = [0,0];
+                }
+            }
+
+            function showScreen(screenName) {
+                Object.values(screens).forEach(s => s.classList.add('hidden'));
+                screens[screenName].classList.remove('hidden');
+            }
+
+            function parseArmyList(rawText) {
+                const listRegexOld = /^\s*(\d+)\s*-\s*(.+)$/i;
+                const listRegexNew = /^(.*?)\s*\[(\d+)\s*pts\]/i;
+                const factionLineRegex = /===\s*.*?\s*\[\d+\s*pts\]\s*===/;
+                
+                return rawText.split('\n')
+                    .map(line => line.trim())
+                    .filter(line => line.length > 0 && !ignoredKeywords.some(kw => line.includes(kw)) && !factionLineRegex.test(line))
+                    .map((line, index) => {
+                        const matchNew = line.match(listRegexNew);
+                        const matchOld = line.match(listRegexOld);
+                        
+                        let name = null, points = null;
+                        if (matchNew) { [ , name, points] = matchNew; } 
+                        else if (matchOld) { [ , points, name] = matchOld; }
+
+                        if (name && points !== null && !isNaN(points)) {
+                            return {
+                                id: `unit-${index}-${Date.now()}`,
+                                name: name.trim(), points: parseInt(points, 10), status: 'alive'
+                            };
+                        }
+                        return null;
+                    }).filter(unit => unit !== null);
+            }
+            
+            function calculatePlayerScore(playerKey, opponentKey) {
+                let vp = 0;
+                gameState[opponentKey].army.forEach(unit => {
+                    if (unit.status === 'destroyed') vp += unit.points;
+                    if (unit.status === 'damaged') vp += Math.ceil(unit.points / 2);
+                });
+                // award kill points to the player who scored them (stored on playerKey)
+                if (gameState[playerKey].kingKill) vp += 100;
+                if (gameState[playerKey].bsbKill) vp += 50;
+                vp += gameState[playerKey].trophies * 50;
+                if (gameState[playerKey].koth) vp += 100;
+                
+                Object.values(gameState[playerKey].objectives).forEach(turnObjectives => {
+                    vp += (turnObjectives[0] + turnObjectives[1]) * 30;
+                });
+                
+                return vp;
+            }
+
+             function updateScoresUI() {
+                const p1VP = calculatePlayerScore('player1', 'player2');
+                const p2VP = calculatePlayerScore('player2', 'player1');
+                
+                document.getElementById('player1-score-val').textContent = p1VP;
+                document.getElementById('player2-score-val').textContent = p2VP;
+            }
+            
+            function buildScoreboardHTML(playerKey, opponentKey) {
+                const player = gameState[playerKey];
+                const opponent = gameState[opponentKey];
+                const [firstTurnPlayerKey, secondTurnPlayerKey] = gameState.turnOrder;
+
+                const firstTurnName = gameState[firstTurnPlayerKey].name;
+                const secondTurnName = gameState[secondTurnPlayerKey].name;
+
+                // create 4 plain checkboxes per row (no visible labels)
+                const makeCheckboxes = (playerKey, row) => {
+                    let html = '';
+                    for (let i = 0; i < 4; i++) {
+                        html += `<label class="obj-box"><input type="checkbox" class="objective-checkbox" data-player="${playerKey}" data-row="${row}" data-index="${i}"></label>`;
+                    }
+                    return html;
+                };
+
+                return `
+                    <div class="objectives-section">
+                        <h3>${player.name} — Strategic Locations</h3>
+                        <div class="strategic-locations">
+                            <h4>End of ${firstTurnName}'s Turn</h4>
+                            <div class="checkbox-grid" id="${playerKey}-objectives-1">
+                                ${makeCheckboxes(playerKey, 0)}
+                            </div>
+                            <h4>End of ${secondTurnName}'s Turn</h4>
+                            <div class="checkbox-grid" id="${playerKey}-objectives-2">
+                                ${makeCheckboxes(playerKey, 1)}
+                            </div>
+                            <label style="margin-top: 1rem;"><input type="checkbox" class="objective-checkbox" data-player="${playerKey}" data-type="koth" ${player.koth ? 'checked' : ''}> King of the Hill?</label>
+                        </div>
+                    </div>
+
+                    <div class="objectives-section">
+                        <h3>${player.name} — Secondary Objectives</h3>
+
+                        <!-- Trophies of War tracker -->
+                        <div class="tracker-control">
+                            <span>Trophies of War</span>
+                            <div style="display:flex; align-items:center; gap:0.5rem;">
+                                <button class="tracker-btn" data-player="${playerKey}" data-type="trophies" data-change="-1">-</button>
+                                <span id="${playerKey}-trophies" class="value">${player.trophies}</span>
+                                <button class="tracker-btn" data-player="${playerKey}" data-type="trophies" data-change="1">+</button>
+                            </div>
+                        </div>
+
+                        <!-- Killed General -->
+                        <div style="margin-top:0.5rem;">
+                            <label><input type="checkbox" class="objective-checkbox" data-player="${playerKey}" data-type="kingKill" ${player.kingKill ? 'checked' : ''}> Killed General</label>
+                        </div>
+
+                        <!-- Killed BSB -->
+                        <div style="margin-top:0.25rem;">
+                            <label><input type="checkbox" class="objective-checkbox" data-player="${playerKey}" data-type="bsbKill" ${player.bsbKill ? 'checked' : ''}> Killed BSB</label>
+                        </div>
+                    </div>
+
+                    <h3>Destroyed Units</h3>
+                    <ul class="unit-list" id="${opponentKey}-units"></ul>
+                `;
+            }
+
+            function renderGame() {
+                const [p1Key, p2Key] = gameState.turnOrder;
+                
+                document.getElementById('scores-header').innerHTML = `
+                    <div class="total-vp-container">
+                        <h2 class="scoreboard-name-header">${gameState[p1Key].name}</h2>
+                        <p id="${p1Key}-score-val" class="total-vp">0</p>
+                    </div>
+                    <div class="total-vp-container">
+                        <h2 class="scoreboard-name-header">${gameState[p2Key].name}</h2>
+                        <p id="${p2Key}-score-val" class="total-vp">0</p>
+                    </div>
+                `;
+                
+                document.getElementById('player1-scoreboard').innerHTML = buildScoreboardHTML(p1Key, p2Key);
+                document.getElementById('player2-scoreboard').innerHTML = buildScoreboardHTML(p2Key, p1Key);
+
+                renderUnitList(p1Key, document.getElementById(`${p1Key}-units`));
+                renderUnitList(p2Key, document.getElementById(`${p2Key}-units`));
+                
+                updateObjectiveCheckboxesForTurn();
+                attachGameEventListeners();
+                updateScoresUI();
+            }
+            
+            function updateObjectiveCheckboxesForTurn() {
+                ['player1', 'player2'].forEach(playerKey => {
+                    if (!gameState[playerKey].objectives[gameState.turn]) {
+                        gameState[playerKey].objectives[gameState.turn] = [0,0];
+                    }
+                    const turnObjectives = gameState[playerKey].objectives[gameState.turn];
+
+                    // turnObjectives is expected as [countRow1, countRow2]
+                    const countRow1 = Array.isArray(turnObjectives) ? (turnObjectives[0] || 0) : 0;
+                    const countRow2 = Array.isArray(turnObjectives) ? (turnObjectives[1] || 0) : 0;
+
+                    document.querySelectorAll(`#${playerKey}-objectives-1 input`).forEach((cb, index) => {
+                        cb.checked = index < countRow1;
+                    });
+                    document.querySelectorAll(`#${playerKey}-objectives-2 input`).forEach((cb, index) => {
+                        cb.checked = index < countRow2;
+                    });
+
+                    // Sync KOTH / King / BSB checkboxes
+                    const kothInput = document.querySelector(`.strategic-locations input[data-player="${playerKey}"][data-type="koth"]`);
+                    if (kothInput) kothInput.checked = !!gameState[playerKey].koth;
+
+                    const kingInput = document.querySelector(`.strategic-locations input[data-player="${playerKey}"][data-type="kingKill"]`);
+                    if (kingInput) kingInput.checked = !!gameState[playerKey].kingKill;
+
+                    const bsbInput = document.querySelector(`.strategic-locations input[data-player="${playerKey}"][data-type="bsbKill"]`);
+                    if (bsbInput) bsbInput.checked = !!gameState[playerKey].bsbKill;
+
+                    // Sync trophies display
+                    const trophiesEl = document.getElementById(`${playerKey}-trophies`);
+                    if (trophiesEl) trophiesEl.textContent = gameState[playerKey].trophies || 0;
+                });
+            }
+
+            function renderUnitList(playerKey, listElement) {
+                listElement.innerHTML = '';
+                gameState[playerKey].army.forEach((unit, index) => {
+                    const li = document.createElement('li');
+                    li.dataset.playerKey = playerKey;
+                    li.dataset.unitIndex = index;
+                    let statusIndicator = '';
+                    if (unit.status === 'damaged') statusIndicator = `<span class="unit-status-indicator status-indicator-damaged">Damaged</span>`;
+                    if (unit.status === 'destroyed') statusIndicator = `<span class="unit-status-indicator status-indicator-destroyed">Destroyed</span>`;
+                    li.innerHTML = `<span>${unit.name} [${unit.points} pts]</span> ${statusIndicator}`;
+                    li.className = `status-${unit.status}`;
+                    listElement.appendChild(li);
+                });
+            }
+            
+            function handleProcessLists() {
+                initGameState();
+                gameState.player1.army = parseArmyList(document.getElementById('player1-list-input').value);
+                gameState.player2.army = parseArmyList(document.getElementById('player2-list-input').value);
+                gameState.player1.name = document.getElementById('setup-p1-name').value || 'Player 1';
+                gameState.player2.name = document.getElementById('setup-p2-name').value || 'Player 2';
+
+                if (gameState.player1.army.length === 0 || gameState.player2.army.length === 0) {
+                    alert("Both army lists must contain valid units. Please check your pasted text.");
+                    return;
+                }
+                
+                document.getElementById('rolloff-p1-name').textContent = gameState.player1.name;
+                document.getElementById('rolloff-p2-name').textContent = gameState.player2.name;
+                showScreen('turnOrder');
+            }
+            
+            function setUnitStatus(status) {
+                const { playerKey, unitIndex } = gameState.activeModal;
+                if(playerKey && unitIndex !== null) {
+                    const unit = gameState[playerKey].army[unitIndex];
+                    const oldStatus = unit.status;
+                    unit.status = status;
+                    
+                    if (status === 'destroyed' && oldStatus !== 'destroyed') {
+                        gameState[playerKey].deathLog.push({ name: unit.name, turn: gameState.turn });
+                    } else if (status !== 'destroyed' && oldStatus === 'destroyed') {
+                        gameState[playerKey].deathLog = gameState[playerKey].deathLog.filter(d => !(d.name === unit.name && d.turn === gameState.turn));
+                    }
+                    
+                    renderGame();
+                    document.getElementById('status-modal').style.display = 'none';
+                }
+            }
+            
+            function showFinalScreen() {
+                const p1FinalScore = calculatePlayerScore('player1', 'player2');
+                const p2FinalScore = calculatePlayerScore('player2', 'player1');
+
+                document.getElementById('final-p1-name').textContent = gameState.player1.name;
+                document.getElementById('final-p2-name').textContent = gameState.player2.name;
+                document.getElementById('final-p1-score').textContent = p1FinalScore;
+                document.getElementById('final-p2-score').textContent = p2FinalScore;
+                
+                const deathLogContainer = document.getElementById('death-log');
+                deathLogContainer.innerHTML = `
+                     <div class="log-column">
+                         <h3>${gameState.player1.name}'s Losses</h3>
+                         <ul>${gameState.player1.deathLog.map(d => `<li><b>Turn ${d.turn}:</b> ${d.name}</li>`).join('') || '<li>None</li>'}</ul>
+                    </div>
+                    <div class="log-column">
+                         <h3>${gameState.player2.name}'s Losses</h3>
+                         <ul>${gameState.player2.deathLog.map(d => `<li><b>Turn ${d.turn}:</b> ${d.name}</li>`).join('') || '<li>None</li>'}</ul>
+                    </div>`;
+
+                const objectiveLog = document.getElementById('objective-log');
+                let logHTML = '<h3>Strategic Locations by Turn</h3><ul>';
+                for(let i=1; i<=gameState.turn; i++) {
+                    const p1_objs_turn1 = gameState.player1.objectives[i] ? gameState.player1.objectives[i][0] : 0;
+                    const p1_objs_turn2 = gameState.player1.objectives[i] ? gameState.player1.objectives[i][1] : 0;
+                    const p2_objs_turn1 = gameState.player2.objectives[i] ? gameState.player2.objectives[i][0] : 0;
+                    const p2_objs_turn2 = gameState.player2.objectives[i] ? gameState.player2.objectives[i][1] : 0;
+
+                    let turnLog = '';
+                    if(p1_objs_turn1 > 0) turnLog += `${gameState.player1.name} scored ${p1_objs_turn1} objective(s).<br>`;
+                    if(p1_objs_turn2 > 0) turnLog += `${gameState.player1.name} scored ${p1_objs_turn2} objective(s).<br>`;
+                    if(p2_objs_turn1 > 0) turnLog += `${gameState.player2.name} scored ${p2_objs_turn1} objective(s).<br>`;
+                    if(p2_objs_turn2 > 0) turnLog += `${gameState.player2.name} scored ${p2_objs_turn2} objective(s).`;
+                    
+                    if (turnLog) {
+                        logHTML += `<li><b>Turn ${i}:</b><br>${turnLog}</li>`;
+                    }
+                }
+                objectiveLog.innerHTML = logHTML + '</ul>' || '<li>No Strategic Locations scored.</li>';
+
+                showScreen('postGame');
+            }
+
+            function attachGameEventListeners() {
+                // Use event delegation to avoid re-attaching listeners on every render
+            }
+            
+            function handleGameScreenClick(e) {
+                const target = e.target;
+
+                // Unit list items
+                const li = target.closest('li');
+                if (li && li.parentElement.classList.contains('unit-list')) {
+                    const unit = gameState[li.dataset.playerKey].army[parseInt(li.dataset.unitIndex, 10)];
+                    gameState.activeModal = { playerKey: li.dataset.playerKey, unitIndex: parseInt(li.dataset.unitIndex, 10) };
+                    document.getElementById('modal-unit-name').textContent = unit.name;
+                    document.getElementById('status-modal').style.display = 'flex';
+                    return;
+                }
+
+                // Objective checkboxes
+                if (target.classList && target.classList.contains('objective-checkbox')) {
+                    const playerKey = target.dataset.player;
+                    if (playerKey) {
+                        // recompute counts for each row for the current turn
+                        const row1Checked = document.querySelectorAll(`#${playerKey}-objectives-1 input:checked`).length;
+                        const row2Checked = document.querySelectorAll(`#${playerKey}-objectives-2 input:checked`).length;
+                        // store as counts (not bitmasks) — this matches how changeTurn and scoring expect counts
+                        gameState[playerKey].objectives[gameState.turn] = [row1Checked, row2Checked];
+
+                        // handle special flags (koth, kingKill, bsbKill)
+                        const type = target.dataset.type;
+                        if (type === 'koth' || type === 'kingKill' || type === 'bsbKill') {
+                            gameState[playerKey][type] = !!target.checked;
+                        }
+
+                        updateScoresUI();
+                    }
+                    return;
+                }
+
+                // Tracker buttons
+                if (target.classList.contains('tracker-btn')) {
+                    const playerKey = target.dataset.player;
+                    const type = target.dataset.type;
+                    const change = parseInt(target.dataset.change, 10);
+                    gameState[playerKey][type] = Math.max(0, gameState[playerKey][type] + change);
+                    document.getElementById(`${playerKey}-${type}`).textContent = gameState[playerKey][type];
+                    updateScoresUI();
+                    return;
+                }
+            }
+
+            function changeTurn(direction) {
+                // Save current objective state before changing turn
+                ['player1', 'player2'].forEach(playerKey => {
+                    let score1 = 0;
+                    let score2 = 0;
+                    document.querySelectorAll(`#${playerKey}-objectives-1 input:checked`).forEach(() => score1++);
+                    document.querySelectorAll(`#${playerKey}-objectives-2 input:checked`).forEach(() => score2++);
+                    gameState[playerKey].objectives[gameState.turn] = [score1, score2];
+                });
+
+                // If moving forward from the final turn, finish the game
+                if (direction > 0 && gameState.turn >= 6) {
+                    showFinalScreen();
+                    return;
+                }
+
+                gameState.turn += direction;
+                if (gameState.turn < 1) gameState.turn = 1;
+                if (gameState.turn > 6) gameState.turn = 6; // Max 6 turns
+                
+                document.getElementById('turn-display').textContent = `Turn ${gameState.turn}`;
+                renderGame();
+            }
+
+            // --- Initial Setup ---
+            initGameState();
+            showScreen('setup');
+
+            document.getElementById('process-lists-btn').addEventListener('click', handleProcessLists);
+            
+            // Turn Order Logic
+            const p1WonRoll = document.getElementById('p1-won-roll');
+            const p2WonRoll = document.getElementById('p2-won-roll');
+            const p1GoesFirst = document.getElementById('p1-goes-first');
+            const p2GoesFirst = document.getElementById('p2-goes-first');
+            p1WonRoll.addEventListener('change', () => { if (p1WonRoll.checked) p2WonRoll.checked = false; });
+            p2WonRoll.addEventListener('change', () => { if (p2WonRoll.checked) p1WonRoll.checked = false; });
+            p1GoesFirst.addEventListener('change', () => { if (p1GoesFirst.checked) p2GoesFirst.checked = false; });
+            p2GoesFirst.addEventListener('change', () => { if (p2GoesFirst.checked) p1GoesFirst.checked = false; });
+
+            document.getElementById('start-game-btn').addEventListener('click', () => {
+                if (!p1GoesFirst.checked && !p2GoesFirst.checked) {
+                    alert("Please select which player goes first.");
+                    return;
+                }
+                gameState.turnOrder = p1GoesFirst.checked ? ['player1', 'player2'] : ['player2', 'player1'];
+                showScreen('game');
+                renderGame();
+            });
+            
+            // Use event delegation for the entire game screen
+            document.getElementById('game-screen').addEventListener('click', handleGameScreenClick);
+
+
+            // Bottom Nav Buttons
+            document.getElementById('prev-turn-btn').addEventListener('click', () => changeTurn(-1));
+            document.getElementById('next-turn-btn').addEventListener('click', () => changeTurn(1));
+            document.getElementById('finish-game-btn').addEventListener('click', () => {
+                if (confirm('Are you sure you want to end the game and view the final score?')) {
+                    showFinalScreen();
+                }
+            });
+            
+            // Post-game: return to game to continue editing
+            const postReturnBtn = document.getElementById('post-return-to-game-btn');
+            if (postReturnBtn) {
+                postReturnBtn.addEventListener('click', () => {
+                    showScreen('game');
+                    renderGame();
+                });
+            }
+            
+             const newGameBtns = [document.getElementById('new-game-btn'), document.getElementById('post-game-new-btn')];
+             newGameBtns.forEach(btn => btn.addEventListener('click', () => {
+                 if (confirm('Are you sure you want to start a new game? All current data will be lost.')) {
+                     location.reload();
+                 }
+             }));
+            
+            // Modal listeners
+            const modal = document.getElementById('status-modal');
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.style.display = 'none';
+            });
+            document.querySelectorAll('.status-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => setUnitStatus(e.target.dataset.status));
+            });
+        });
+    </script>
+</body>
+</html>
