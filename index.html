@@ -730,24 +730,27 @@
                     </div>`;
 
                 const objectiveLog = document.getElementById('objective-log');
-                let logHTML = '<h3>Strategic Locations by Turn</h3><ul>';
-                for(let i=1; i<=gameState.turn; i++) {
-                    const p1_objs_turn1 = gameState.player1.objectives[i] ? gameState.player1.objectives[i][0] : 0;
-                    const p1_objs_turn2 = gameState.player1.objectives[i] ? gameState.player1.objectives[i][1] : 0;
-                    const p2_objs_turn1 = gameState.player2.objectives[i] ? gameState.player2.objectives[i][0] : 0;
-                    const p2_objs_turn2 = gameState.player2.objectives[i] ? gameState.player2.objectives[i][1] : 0;
+                // Sum strategic locations per player per turn (combine both end-of-turn rows)
+                const items = [];
+                for (let i = 1; i <= gameState.turn; i++) {
+                    const p1Obj = (gameState.player1.objectives[i] ? (gameState.player1.objectives[i][0] || 0) + (gameState.player1.objectives[i][1] || 0) : 0);
+                    const p2Obj = (gameState.player2.objectives[i] ? (gameState.player2.objectives[i][0] || 0) + (gameState.player2.objectives[i][1] || 0) : 0);
 
                     let turnLog = '';
-                    if(p1_objs_turn1 > 0) turnLog += `${gameState.player1.name} scored ${p1_objs_turn1} objective(s).<br>`;
-                    if(p1_objs_turn2 > 0) turnLog += `${gameState.player1.name} scored ${p1_objs_turn2} objective(s).<br>`;
-                    if(p2_objs_turn1 > 0) turnLog += `${gameState.player2.name} scored ${p2_objs_turn1} objective(s).<br>`;
-                    if(p2_objs_turn2 > 0) turnLog += `${gameState.player2.name} scored ${p2_objs_turn2} objective(s).`;
-                    
-                    if (turnLog) {
-                        logHTML += `<li><b>Turn ${i}:</b><br>${turnLog}</li>`;
+                    if (p1Obj > 0) turnLog += `${gameState.player1.name} scored ${p1Obj} objective(s).`;
+                    if (p2Obj > 0) {
+                        if (turnLog) turnLog += '<br>';
+                        turnLog += `${gameState.player2.name} scored ${p2Obj} objective(s).`;
                     }
+
+                    if (turnLog) items.push(`<li><b>Turn ${i}:</b><br>${turnLog}</li>`);
                 }
-                objectiveLog.innerHTML = logHTML + '</ul>' || '<li>No Strategic Locations scored.</li>';
+
+                if (items.length) {
+                    objectiveLog.innerHTML = '<h3>Strategic Locations by Turn</h3><ul>' + items.join('') + '</ul>';
+                } else {
+                    objectiveLog.innerHTML = '<li>No Strategic Locations scored.</li>';
+                }
 
                 showScreen('postGame');
             }
